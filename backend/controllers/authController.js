@@ -7,7 +7,7 @@ const login = async (req, res) => {
 
   try {
     // Fetch user from the database
-    const userQuery = 'SELECT * FROM users WHERE username = $1';
+    const userQuery = 'SELECT * FROM login.users WHERE username = $1';
     const { rows } = await db.query(userQuery, [username]);
     console.log(rows);
 

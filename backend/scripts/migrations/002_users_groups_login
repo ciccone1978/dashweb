@@ -48,3 +48,6 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_group_id ON users(group_id);
 CREATE INDEX idx_user_groups_user_id ON user_groups(user_id);
 CREATE INDEX idx_user_groups_group_id ON user_groups(group_id);
+
+GRANT USAGE ON SCHEMA login TO dashweb_admin;
+GRANT SELECT ON login.users TO dashweb_admin;
