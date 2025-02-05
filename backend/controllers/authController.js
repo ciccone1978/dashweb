@@ -4,12 +4,12 @@ const db = require('../config/db');
 
 const login = async (req, res) => {
   const { username, password } = req.body;
+  console.log("Received login request:", req.body); 
 
   try {
     // Fetch user from the database
     const userQuery = 'SELECT * FROM login.users WHERE username = $1';
     const { rows } = await db.query(userQuery, [username]);
-    console.log(rows);
 
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Invalid username or password' });
@@ -18,7 +18,7 @@ const login = async (req, res) => {
     const user = rows[0];
 
     // Compare passwords
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
@@ -28,7 +28,8 @@ const login = async (req, res) => {
       expiresIn: '1h',
     });
 
-    res.json({ token });
+    return res.json({ message: "Login successful", token:token });
+    
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ message: 'Internal server error' });
