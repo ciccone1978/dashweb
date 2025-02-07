@@ -1,57 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link href="/css/styles.css" rel="stylesheet">
-    <style>
-        /* Glassmorphism Effect */
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <script src="https://kit.fontawesome.com/31703130a0.js" crossorigin="anonymous"></script>
+  <style>
+    .hero-body {
+      height: 100vh;
+    }
+    .login-box {
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+      border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+  </style>
 </head>
-<body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900 text-white">
-    
-    <div class="w-full max-w-md p-8 rounded-2xl glass shadow-lg">
-        <h2 class="text-3xl font-bold text-center mb-6">Welcome</h2>
-        
-        <form id="loginForm" class="space-y-4">
-            <!-- Username Input -->
-            <div class="relative">
-                <input type="text" id="username" name="username" required
-                    class="peer w-full px-4 py-3 text-white bg-transparent border-b-2 border-white outline-none focus:border-blue-400 transition-all">
-                <label for="username"
-                    class="absolute left-4 top-3 text-gray-300 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-sm peer-focus:text-blue-300">
-                    Username
-                </label>
-            </div>
+<body>
 
-            <!-- Password Input -->
-            <div class="relative">
-                <input type="password" id="password" name="password" required
-                    class="peer w-full px-4 py-3 text-white bg-transparent border-b-2 border-white outline-none focus:border-blue-400 transition-all">
-                <label for="password"
-                    class="absolute left-4 top-3 text-gray-300 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-3 peer-focus:text-sm peer-focus:text-blue-300">
-                    Password
-                </label>
-            </div>
-
-            <!-- Login Button -->
-            <button type="submit"
-                class="w-full py-3 mt-4 bg-blue-600 hover:bg-blue-500 transition-all text-white font-semibold rounded-lg shadow-lg">
-                Login
+  <!-- Hero Section -->
+<section class="hero is-fullheight is-flex is-justify-content-center is-align-items-center">
+    <div class="login-box box">
+      <h1 class="title">Login</h1>
+      <div id="errorMessage" style="color: red;"></div>
+      <form id="loginForm">
+        <!-- Username -->
+        <div class="field">
+          <label class="label">Username</label>
+          <div class="control has-icons-left">
+            <input class="input" type="text" placeholder="Enter your username" id="username" name="username" required>
+            <span class="icon is-small is-left">
+              <i class="fa-solid fa-user"></i>
+            </span>
+          </div>
+        </div>
+  
+        <!-- Password Input -->
+        <div class="field">
+          <label class="label">Password</label>
+          <div class="control has-icons-left">
+            <input class="input" type="password" placeholder="Enter your password" id="password" name="password" required>
+            <span class="icon is-small is-left">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+          </div>
+        </div>
+  
+        <!-- Submit Button -->
+        <div class="field">
+          <div class="control">
+            <button class="button is-primary is-fullwidth" type="submit">
+              Login
             </button>
-        </form>
-
-        <!-- Footer -->
-        <p class="mt-6 text-center text-gray-300">
-            Don't have an account? <a href="#" class="text-blue-400 hover:underline">Sign up</a>
-        </p>
+          </div>
+        </div>
+  
+        
+      </form>
     </div>
-    <script src="/js/auth/login.js"></script>
+  </section>
+
+  <script type="module" src="/js/auth/login.js"></script>
 </body>
 </html>
