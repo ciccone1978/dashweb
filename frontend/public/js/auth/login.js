@@ -26,10 +26,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         // Show error message
         //document.getElementById('errorMessage').classList.remove('hidden');
         errorMessage.textContent = data.message;
+        errorMessage.classList.remove("d-none");
       }
     } catch (error) {
       console.error('Error during login:', error);
       //document.getElementById('errorMessage').classList.remove('hidden');
       errorMessage.textContent = 'An unexpected error occurred';
+      errorMessage.classList.remove("d-none");
     }
   });
