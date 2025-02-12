@@ -44,12 +44,17 @@ app.get('/api/user', authenticateToken, (req, res) => {
   res.json({ username: req.user.username }); // Send user data as JSON
 });
 
-// --- Error Handling Middleware (AFTER your routes) ---
+// --- 404 Error Handler (AFTER all other routes) ---
+app.use((req, res, next) => {
+  res.status(404).sendFile(path.join(__dirname, '../frontend/src/views/errors/404.html'));
+});
+
+// --- 500 Error Handler (AFTER 404 handler) ---
 app.use((err, req, res, next) => {
   const requestId = req.headers['x-request-id'] || 'No Request ID';
   const ip = req.ip;
-  logger.error(`[${requestId}] ${err.message} - IP: ${ip}`, err);
-  res.status(500).json({ message: 'Internal Server Error' });
+  logger.error(`[${requestId}] ${err.message} - IP: ${ip}`, err); // Log the error (with stack trace)
+  res.status(500).sendFile(path.join(__dirname, '../frontend/src/views/errors/500.html'));
 });
 
 module.exports = app;
