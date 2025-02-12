@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const path = require('path');
 const db = require('../config/db');
 const logger = require('../utils/logger');
+const nodemailer = require('nodemailer');
 
 function generateAccessToken(user) {
   return jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, {
@@ -134,4 +136,159 @@ const logout = (req, res) => {
   res.status(200).json({ message: 'Logout successful' });
 };
 
-module.exports = { login, loginPost, logout, refreshToken };
+
+// --- Forgot Password ---
+const forgotPassword = (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/src/views/auth/forgot-password.html'));
+};
+
+const forgotPasswordPost = async (req, res) => {
+  const { email } = req.body;
+  const requestId = req.headers['x-request-id'] || 'No Request ID';
+  const ip = req.ip
+
+  try {
+      // 1. Validate email
+      if (!email) {
+          return res.status(400).json({ message: 'Email is required' });
+      }
+
+      // 2. Find user by email
+      const userQuery = 'SELECT * FROM login.users WHERE email = $1';
+      const { rows } = await db.query(userQuery, [email]);
+
+      if (rows.length === 0) {
+          // Don't reveal whether the email exists or not.  Just send a generic success message.
+          logger.warn(`[${requestId}] Password reset requested for non-existent email: ${email} - IP: ${ip}`);
+          return res.status(200).json({ message: 'A password reset link has been sent.' });
+      }
+
+      const user = rows[0];
+
+      // 3. Generate a unique reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+
+      // 4. Store the token and expiration time in the database
+      const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+      const updateQuery = `
+          UPDATE login.users
+          SET reset_token = $1, reset_token_expires_at = $2
+          WHERE id = $3`;
+      await db.query(updateQuery, [resetToken, expiresAt, user.id]);
+
+      // 5. Send password reset email
+      await sendPasswordResetEmail(email, resetToken);
+
+      logger.info(`[${requestId}] Password reset requested for user: ${user.username} - IP: ${ip}`);
+      res.status(200).json({ message: 'A password reset link has been sent.' });
+
+  } catch (error) {
+      logger.error(`[${requestId}]Error during password reset request - IP: ${ip}`, error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// --- Email Password Reset Function (using Nodemailer) ---
+async function sendPasswordResetEmail(email, resetToken) {
+  try {
+    //Ethreal only
+    const testAccount = await nodemailer.createTestAccount();
+
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+        },
+    });
+
+    // Construct the reset link
+    const resetLink = `${process.env.BASE_URL}:${process.env.PORT}/auth/reset-password?token=${resetToken}`;
+
+    const mailOptions = {
+      from: process.env.MANAGER_EMAIL,
+      to: email,
+      subject: 'Password Reset Request',
+      text: `
+              You have requested to reset your password. Please click the following link to reset it:
+              
+              ${resetLink}   
+              
+              This link will expire in 1 hour. If you did not request a password reset, please ignore this email.
+          `,
+      html: `
+              <p>You have requested to reset your password. Please click the following link to reset it:</p>
+              <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
+              <p>This link will expire in 1 hour. If you did not request a password reset, please ignore this email.</p>
+          `,
+    };
+    
+
+    // Send the email
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`Password reset email sent: ${info.messageId}`);
+      
+    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+
+ } catch (error) {
+     logger.error(`Error sending password reset email: ${error}`);
+     throw error; // Re-throw
+ }
+}
+
+
+// --- Reset Password ---
+
+const resetPassword = (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/src/views/auth/reset-password.html'));
+};
+
+const resetPasswordPost = async (req, res) => {
+  const { token, newPassword } = req.body;
+  const requestId = req.headers['x-request-id'] || 'No Request ID';
+  const ip = req.ip;
+
+  try {
+      // 1. Validate input
+      if (!token || !newPassword) {
+          return res.status(400).json({ message: 'Token and new password are required' });
+      }
+
+      // 2. Find user by reset token and check expiration
+      const userQuery = `
+          SELECT * FROM login.users
+          WHERE reset_token = $1 AND reset_token_expires_at > NOW()`;
+      const { rows } = await db.query(userQuery, [token]);
+
+      if (rows.length === 0) {
+           logger.warn(`[${requestId}] Invalid or expired password reset token used - IP: ${ip}`);
+          return res.status(400).json({ message: 'Invalid or expired reset token' });
+      }
+
+      const user = rows[0];
+
+      // 3. Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // 4. Update the user's password and clear the reset token
+      const updateQuery = `
+          UPDATE login.users
+          SET password_hash = $1, reset_token = NULL, reset_token_expires_at = NULL
+          WHERE id = $2`;
+      await db.query(updateQuery, [hashedPassword, user.id]);
+
+      logger.info(`[${requestId}] Password reset successful for user: ${user.username} - IP: ${ip}`);
+      res.status(200).json({ message: 'Password reset successfully' });
+
+  } catch (error) {
+      logger.error(`[${requestId}] Error during password reset - IP: ${ip}`, error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { login, loginPost, logout, refreshToken, 
+  forgotPassword, forgotPasswordPost,
+  resetPassword, resetPasswordPost
+ };

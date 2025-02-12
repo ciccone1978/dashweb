@@ -31,6 +31,8 @@ CREATE TABLE users (
     group_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reset_token TEXT,
+    reset_token_expires_at TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES groups(id)
 );
 
@@ -50,4 +52,5 @@ CREATE INDEX idx_user_groups_user_id ON user_groups(user_id);
 CREATE INDEX idx_user_groups_group_id ON user_groups(group_id);
 
 GRANT USAGE ON SCHEMA login TO dashweb_admin;
-GRANT SELECT ON login.users TO dashweb_admin;
+GRANT ALL PRIVILEGES ON login.users TO dashweb_admin WITH GRANT OPTION;
+--GRANT SELECT ON login.users TO dashweb_admin;
