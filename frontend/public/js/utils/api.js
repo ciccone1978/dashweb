@@ -1,34 +1,80 @@
-// frontend/public/js/utils/api.js
+const axios = window.axios;
 
-async function fetchWithAuth(url, options = {}) {
-    try {
-        const response = await fetch(url, options);
+// Create an Axios instance
+const api = axios.create({
+    baseURL: '/', // Base URL for all requests
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    withCredentials: true, // Send cookies with cross-origin requests
+});
 
-        if (response.status === 401) {
-            // Attempt to refresh the token
-            const refreshResponse = await fetch('/auth/refresh-token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+// --- Request Interceptor ---
+api.interceptors.request.use(
+    (config) => {
+        // Client-side logging (basic info)
+        console.log(`[Request] ${config.method.toUpperCase()} ${config.url}`);
 
-            if (refreshResponse.ok) {
-                // Retry the original request with the new access token
-                return fetch(url, options); // Recursive call, but safe
-            } else {
-                // Refresh token is also invalid/expired, redirect to login
-                window.location.href = '/auth/login';
-                return Promise.reject('Refresh token failed');
-            }
-        }
+        // Add a unique request ID (for server-side correlation)
+        config.headers['X-Request-ID'] = generateRequestId();
 
-        return response;
-    } catch (error) {
-        console.error('Fetch with auth error:', error);
-        window.location.href = '/auth/login'; //redirect to login in any error
+        return config;
+    },
+    (error) => {
+        // Client-side logging (basic error info)
+        console.error('[Request Error]', error);
         return Promise.reject(error);
     }
+);
+
+// --- Response Interceptor ---
+api.interceptors.response.use(
+    (response) => {
+        // Client-side logging (basic info)
+        console.log(`[Response] ${response.status} ${response.config.url}`);
+        return response;
+    },
+    async (error) => {
+        const originalRequest = error.config;
+
+        // Client-side logging (basic error info)
+        console.error('[Response Error]', error.response ? error.response.status : error.message, error.config.url);
+
+
+        // If the error is a 401 and we haven't already tried to refresh...
+        if (error.response && error.response.status === 401 && 
+            !originalRequest._retry && originalRequest.url !== '/auth/login') {
+            originalRequest._retry = true;
+
+            try {
+                // Attempt to refresh the token
+                const refreshResponse = await axios.post('/auth/refresh-token');
+
+                if (refreshResponse.status === 200) {
+                    return api(originalRequest);
+                } else {
+                    window.location.href = '/auth/login';
+                    return Promise.reject(new Error('Refresh token failed'));
+                }
+            } catch (refreshError) {
+                window.location.href = '/auth/login';
+                return Promise.reject(refreshError);
+            }
+        }
+        // For other errors, redirect to login page.
+        if(error.response && error.response.status === 403){
+             window.location.href = '/auth/login';
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// --- Helper function to generate a unique request ID ---
+function generateRequestId() {
+    return Math.random().toString(36).substring(2, 15) +
+           Math.random().toString(36).substring(2, 15);
 }
 
-export { fetchWithAuth }; // Export the function
+// --- Export the Axios instance ---
+export { api };

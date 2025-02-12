@@ -5,6 +5,7 @@ const { authenticateToken } = require('./middleware/authMiddleware');
 const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const logger = require('./utils/logger');
 
 dotenv.config();
 
@@ -22,6 +23,15 @@ app.use(express.static(path.join(__dirname, '../frontend/public')));
 // Serve static files from the 'frontend/src' directory
 app.use(express.static(path.join(__dirname, '../frontend/src')));
 
+// --- Request Logging Middleware (BEFORE your routes) ---
+app.use((req, res, next) => {
+  const requestId = req.headers['x-request-id'] || 'No Request ID'; // Get the ID from the header
+  const ip = req.ip; // Get the client's IP address
+  // Log the request with IP address and request ID
+  logger.info(`[${requestId}] ${req.method} ${req.url} - IP: ${ip}`);
+  next();
+});
+
 // Routes
 app.use('/auth', authRoutes);
 
@@ -32,6 +42,14 @@ app.get('/', authenticateToken, (req, res) => {
 // Protected API endpoint (example - you can have others)
 app.get('/api/user', authenticateToken, (req, res) => {
   res.json({ username: req.user.username }); // Send user data as JSON
+});
+
+// --- Error Handling Middleware (AFTER your routes) ---
+app.use((err, req, res, next) => {
+  const requestId = req.headers['x-request-id'] || 'No Request ID';
+  const ip = req.ip;
+  logger.error(`[${requestId}] ${err.message} - IP: ${ip}`, err);
+  res.status(500).json({ message: 'Internal Server Error' });
 });
 
 module.exports = app;

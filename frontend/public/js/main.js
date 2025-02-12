@@ -1,59 +1,40 @@
-import { fetchWithAuth } from './utils/api.js';
+import { api } from './utils/api.js';
 
 document.addEventListener("DOMContentLoaded", function () {
-  const userInfo = document.getElementById("user-info");
-  const usernameSpan = document.getElementById("username");
-  const logoutButton = document.getElementById('logout-button');
+    const username = document.getElementById("username");
+    const logoutButton = document.getElementById('logout-button');
   
-  // Function to check if the user is logged in
-  async function checkLoginStatus() {
-    try {
-        const response = await fetchWithAuth('/api/user', {
-            method: 'GET', // Use GET to fetch user info
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+    // --- Function to check if the user is logged in and fetch user data ---
+    async function checkLoginStatus() {
+        try {
+            const response = await api.get('/api/user'); // Use the Axios instance
 
-        if (response.ok) {
-            const data = await response.json();
-            usernameSpan.textContent = `Welcome, ${data.username}!`;
-            logoutButton.style.display = 'block'; // Show logout button
-        } else {
-             // If unauthorized (401), redirect to login
-            if (response.status === 401) {
-              window.location.href = '/auth/login';
-            } 
-            /*else {
-              console.error('Error fetching user data:', response.status);
-              //window.location.href = '/auth/login';
-            }*/
-         }
-    } catch (error) {
-        console.error('Error checking login status:', error);
-        window.location.href = '/auth/login';
+            if (response.status === 200) {
+                const data = response.data; // Axios automatically parses JSON
+                username.textContent = `Welcome, ${data.username}!`;
+                logoutButton.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error checking login status:', error);
+            // No need to redirect here, the interceptor handles it
+        }
     }
-} 
 
-// Handle logout button click
-logoutButton.addEventListener('click', async () => {
-  try {
-      const response = await fetchWithAuth('/auth/logout', {
-          method: 'GET', // Use get method
-      });
+    // --- Handle logout button click ---
+    logoutButton.addEventListener('click', async () => {
+        try {
+            const response = await api.get('/auth/logout'); // Use the Axios instance
 
-      if (response.ok) {
-          // Redirect to the login page after successful logout
-          window.location.href = '/auth/login';
-      } else {
-          const data = await response.json();
-          console.error('Logout failed:', data.message);
-      }
-  } catch (error) {
-      console.error('Error during logout:', error);
-  }
-});
+            if (response.status === 200) {
+                window.location.href = '/auth/login';
+            } else {
+                console.error('Logout failed:', response.data.message);
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
+    });
 
-// Check login status when the page loads
-checkLoginStatus();
+    // Check login status when the page loads
+    checkLoginStatus();
 });
