@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (response.status === 200) {
                 const data = response.data; // Axios automatically parses JSON
-                username.textContent = `Welcome, ${data.username}!`;
+                username.textContent = data.username;
                 logoutButton.style.display = 'block';
             }
         } catch (error) {
