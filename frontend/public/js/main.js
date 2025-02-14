@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
       
         // Create the main unordered list for the menu
         const ul = document.createElement("ul");
-        ul.className = "nav nav-pills nav-sidebar flex-column";
+        ul.className = "nav nav-pills nav-sidebar flex-column nav-compact";
         ul.setAttribute("data-widget", "treeview");
         ul.setAttribute("role", "menu");
         ul.setAttribute("data-accordion", "false");
