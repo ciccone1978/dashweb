@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const menuRoutes = require('./routes/menuRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { authenticateToken } = require('./middleware/authMiddleware');
 const path = require('path');
 const cors = require('cors');
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes);
 app.use('/api/menu', menuRoutes);
 
 app.get('/', authenticateToken, (req, res) => {

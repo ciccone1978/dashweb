@@ -22,6 +22,9 @@ CREATE TABLE login.users (
 	reset_token_expires_at TIMESTAMP NULL
 );
 
+-- ADD
+ALTER TABLE login.users ADD COLUMN status TEXT DEFAULT 'active' CHECK (status IN ('active', 'disabled'));
+
 CREATE TABLE login.user_roles (
     user_id INTEGER REFERENCES login.users(id) ON DELETE CASCADE,
     role_id INTEGER REFERENCES login.roles(id) ON DELETE CASCADE,
