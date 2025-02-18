@@ -5,6 +5,7 @@ const path = require('path');
 const db = require('../config/db');
 const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
+const ms = require('ms');
 
 function generateAccessToken(user) {
   return jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, {
@@ -53,19 +54,19 @@ const loginPost = async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
     
-    // Store the JWT in an HTTP-only cookie
+    // Store the JWT in an HTTP-only cookie 
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 900000, // 15 minutes
+        maxAge: ms(process.env.JWT_ACCESS_TOKEN_EXPIRATION)
     });
 
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 604800000, //7 days
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: ms(process.env.JWT_REFRESH_TOKEN_EXPIRATION)
     });
 
     /* const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
