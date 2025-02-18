@@ -11,6 +11,6 @@ router.use(authMiddleware.authenticateToken);
 router.get('/users', adminController.getUsers);
 router.post('/users', adminController.getUsersPost);
 //router.put('/users/:id', adminController.updateUser);
-//router.patch('/users/:id/status', adminController.toggleUserStatus);
+router.patch('/users/:id/status', adminController.toggleUserStatus);
 
 module.exports = router;

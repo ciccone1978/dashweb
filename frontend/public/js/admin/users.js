@@ -3,43 +3,55 @@ import { api } from '../utils/api.js';
 
 $(document).ready(function() {
     
-    // --- Fetch User Data with Axios ---
-    api.post('/admin/users') // Use the Axios instance
-        .then(response => {
-            // --- Initialize DataTable with the fetched data ---
-            const usersTable = $('#users-table').DataTable({
-                data: response.data, // Directly use the response data
-                columns: [
-                    { data: 'first_name' },
-                    { data: 'last_name' },
-                    { data: 'username' },
-                    { data: 'email' },
-                    {
-                        data: "status",
-                        render: function (data) {
-                            return data === "active" ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Disabled</span>';
-                        }
-                    },
-                    {
-                        data: "id",
-                        render: function (data, type, row) {
-                            return `
-                                <button class="btn btn-warning btn-sm edit-user" data-id="${data}">Edit</button>
-                                <button class="btn btn-danger btn-sm toggle-status" data-id="${data}" data-status="${row.status}">
-                                    ${row.status === "active" ? "Disable" : "Enable"}
-                                </button>
-                            `;
-                        }
-                    }
-                ],
-                searching: false,
-                autoWidth: false
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching users:', error);
-        });
+    let usersTable; // Define in a higher scope
 
+    function initializeUserTable() {
+        api.post('/admin/users') // Use the Axios instance
+            .then(response => {
+                if ($.fn.DataTable.isDataTable('#users-table')) {
+                    usersTable.clear().rows.add(response.data).draw(); // Refresh existing DataTable
+                } else {
+                    usersTable = $('#users-table').DataTable({
+                        data: response.data,
+                        columns: [
+                            { data: 'first_name' },
+                            { data: 'last_name' },
+                            { data: 'username' },
+                            { data: 'email' },
+                            {
+                                data: "status",
+                                render: function (data) {
+                                    return data === "active" 
+                                        ? '<span class="badge badge-success">Active</span>' 
+                                        : '<span class="badge badge-danger">Disabled</span>';
+                                }
+                            },
+                            {
+                                data: "id",
+                                render: function (data, type, row) {
+                                    return `
+                                        <button class="btn btn-warning btn-sm edit-user" data-id="${data}">Edit</button>
+                                        <button class="btn btn-danger btn-sm toggle-status" data-id="${data}" data-status="${row.status}">
+                                            ${row.status === "active" ? "Disable" : "Enable"}
+                                        </button>
+                                    `;
+                                }
+                            }
+                        ],
+                        searching: false,
+                        autoWidth: false
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching users:', error);
+            });
+    }
+
+    // Call the function to initialize the DataTable
+    initializeUserTable();
+
+    //Open ADD user modal window
     $("#addUserBtn").click(function () {
         $("#modalTitle").text("Add User");
         $("#userForm")[0].reset();
@@ -47,6 +59,7 @@ $(document).ready(function() {
         $("#userModal").modal("show");
     });  
     
+    //SAVE new user
     $("#saveUserBtn").click(function () {
         /* const userData = {
             id: $("#userId").val(),
@@ -67,6 +80,7 @@ $(document).ready(function() {
         $("#userModal").modal("hide");
     });
 
+    //EDIT user
     $("#users-table tbody").on("click", ".edit-user", function () {
         const userId = $(this).data("id");
         console.log(userId);
@@ -84,15 +98,14 @@ $(document).ready(function() {
             .catch(error => console.error("Error fetching user details:", error)); */
     });
 
+    //Enable/Disable user
     $("#users-table tbody").on("click", ".toggle-status", function () {
         const userId = $(this).data("id");
         const newStatus = $(this).data("status") === "active" ? "disabled" : "active";
-        
-        console.log(userId);
-        console.log(newStatus);
-        /* axios.patch(`/api/admin/users/${userId}/status`, { status: newStatus })
-            .then(() => usersTable.ajax.reload())
-            .catch(error => console.error("Error updating status:", error)); */
+
+        api.patch(`/admin/users/${userId}/status`, { status: newStatus })
+            .then(() => initializeUserTable())
+            .catch(error => console.error("Error updating status:", error));
     });
 
 

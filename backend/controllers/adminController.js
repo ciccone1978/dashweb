@@ -19,4 +19,20 @@ const getUsersPost = async (req, res) => {
     }
 };
 
-module.exports = { getUsers, getUsersPost };
+// Enable or disable a user
+const toggleUserStatus = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { status } = req.body;
+        
+        const query = `UPDATE login.users SET status = $1 WHERE id = $2`;
+        await db.query(query, [status, userId]);
+        
+        res.status(200).json({ message: `User ${status ? 'enabled' : 'disabled'} successfully` });
+    } catch (error) {
+        console.error('Error updating user status:', error);
+        res.status(500).json({ message: 'Failed to update user status' });
+    }
+};
+
+module.exports = { getUsers, getUsersPost, toggleUserStatus };
