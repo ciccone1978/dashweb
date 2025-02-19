@@ -289,7 +289,79 @@ const resetPasswordPost = async (req, res) => {
   }
 };
 
+// --- Change Password ---
+//
+const changePassword = (req,res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/src/views/auth/change-password.html'));
+}
+
+const changePasswordPost = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id; // Get user ID from req.user (set by authenticateToken)
+  const requestId = req.headers['x-request-id'] || 'No Request ID';
+  const ip = req.ip;
+
+  try {
+      // --- 1. Validate input ---
+      if (!currentPassword || !newPassword) {
+        logger.warn(`[${requestId}] Change password attempt failed: Missing required fields - IP: ${ip}`);
+        return res.status(400).json({ message: 'Current password and new password are required' });
+      }
+
+      //validate new password
+      if(newPassword.length < 8){ // Example: check min length
+        logger.warn(`[${requestId}] Change password attempt failed: the password is not valid - IP: ${ip}`);
+        return res.status(400).json({message: 'The password is not valid'})
+      }
+
+      // --- 2. Get the user's current (hashed) password ---
+      const userQuery = 'SELECT password_hash, username FROM login.users WHERE id = $1'; // Get hashed password
+      const { rows } = await db.query(userQuery, [userId]);
+
+      if (rows.length === 0) {
+          // This should never happen if authenticateToken is working correctly,
+          // but it's good to have a check.
+           logger.error(`[${requestId}]Change password attempt failed: User not found - IP: ${ip}`);
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      const user = rows[0];
+
+      // --- 3. Verify the current password ---
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!isCurrentPasswordValid) {
+        logger.warn(`[${requestId}]Change password attempt failed: Invalid current password for user ${user.username} - IP: ${ip}`);
+        return res.status(401).json({ message: 'Invalid current password' });
+      }
+
+      // --- 4. Hash the new password ---
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+      // --- 5. Update the user's password in the database ---
+      const updateQuery = 'UPDATE login.users SET password_hash = $1 WHERE id = $2';
+      await db.query(updateQuery, [newPasswordHash, userId]);
+
+      // --- 6. (Optional) Clear Session / Invalidate Tokens ---
+      //     This is a good security practice.  You'd need to adapt this
+      //     based on how you're storing/managing tokens.  For example,
+      //     if you're using a blacklist for revoked tokens, you'd add
+      //     the current access token to the blacklist. If you are using
+      //     refresh tokens stored in db, you would delete them.
+
+      logger.info(`[${requestId}] Password changed successfully for user: ${user.username} - IP: ${ip}`);
+      res.status(200).json({ message: 'Password changed successfully' });
+
+  } catch (error) {
+      logger.error(`[${requestId}] Error during password change for user ID: ${userId} - IP: ${ip}`);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+
+};
+
+
+
 module.exports = { login, loginPost, logout, refreshToken, 
   forgotPassword, forgotPasswordPost,
-  resetPassword, resetPasswordPost
+  resetPassword, resetPasswordPost,
+  changePassword, changePasswordPost
  };
