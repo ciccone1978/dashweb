@@ -6,7 +6,7 @@ $(document).ready(function() {
     let usersTable; // Define in a higher scope
 
     function initializeUserTable() {
-        api.post('/admin/users') // Use the Axios instance
+        api.get('/admin/users') // Use the Axios instance
             .then(response => {
                 if ($.fn.DataTable.isDataTable('#users-table')) {
                     usersTable.clear().rows.add(response.data).draw(); // Refresh existing DataTable
@@ -61,41 +61,47 @@ $(document).ready(function() {
     
     //SAVE new user
     $("#saveUserBtn").click(function () {
-        /* const userData = {
+        const userData = {
             id: $("#userId").val(),
-            username: $("#username").val(),
+            first_name: $("#first_name").val(),
+            last_name: $("#last_name").val(),
+            username: $("#user_name").val(),
             email: $("#email").val(),
             role: $("#role").val(),
             password: $("#password").val()
         };
+
+        //choose "put" to edit user and "post" to create new user
         const method = userData.id ? "put" : "post";
-        const url = userData.id ? `/api/admin/users/${userData.id}` : "/api/admin/users";
+        const url = userData.id ? `/admin/users/${userData.id}` : "/admin/users";
         
-        axios[method](url, userData)
+        api[method](url, userData)
             .then(() => {
                 $("#userModal").modal("hide");
-                usersTable.ajax.reload();
+                initializeUserTable()
             })
-            .catch(error => console.error("Error saving user:", error)); */
+            .catch(error => console.error("Error saving user:", error));
+        
         $("#userModal").modal("hide");
     });
 
     //EDIT user
     $("#users-table tbody").on("click", ".edit-user", function () {
         const userId = $(this).data("id");
-        console.log(userId);
-        /* api.get(`/admin/users/${userId}`)
+        api.get(`/admin/users/${userId}`)
             .then(response => {
                 const user = response.data;
                 $("#modalTitle").text("Edit User");
                 $("#userId").val(user.id);
-                $("#username").val(user.username);
+                $("#first_name").val(user.first_name);
+                $("#last_name").val(user.last_name);
+                $("#user_name").val(user.username);
                 $("#email").val(user.email);
-                $("#role").val(user.role);
+                $("#role").val("");
                 $("#password").val("");
                 $("#userModal").modal("show");
             })
-            .catch(error => console.error("Error fetching user details:", error)); */
+            .catch(error => console.error("Error fetching user details:", error));
     });
 
     //Enable/Disable user
