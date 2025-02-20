@@ -6,6 +6,7 @@ const db = require('../config/db');
 const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
 const ms = require('ms');
+const helpers = require('../utils/helpers')
 
 function generateAccessToken(user) {
   return jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, {
@@ -358,10 +359,69 @@ const changePasswordPost = async (req, res) => {
 
 };
 
+// --- Register ---
+const register = (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/src/views/auth/register.html'));
+};
 
+const registerPost = async (req, res) => {
+  const { firstName, lastName, username, email } = req.body;
+  const requestId = req.headers['x-request-id'] || 'No Request ID';
+  const ip = req.ip;
+  try {
+    logger.info(`[${requestId}] Registration request received - Username: ${username}, Email: ${email} - IP: ${ip}`);
+    
+    // 1. Validate input
+    if (!firstName|| !lastName || !username || !email) {
+      logger.warn(`[${requestId}] Registration attempt failed: all fields are required - IP: ${ip}`);
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (!helpers.isValidEmail(email)) {
+      logger.warn(`[${requestId}] Registration attempt failed: invalid email - IP: ${ip}`);
+      return res.status(400).json({ message: 'Invalid email address' });
+    }
+
+    // 2. Check for existing users/requests
+    const userExistsQuery = 'SELECT * FROM login.users WHERE username = $1 OR email = $2';
+    const userExistsResult = await db.query(userExistsQuery, [username, email]);
+    if (userExistsResult.rows.length > 0) {
+      logger.warn(`[${requestId}] Registration attempt failed: Username or email already exists - IP: ${ip}`);
+      return res.status(409).json({ message: 'Username or email already exists' });
+    }
+
+    const requestExistsQuery =
+          'SELECT * FROM login.registration_requests WHERE username = $1 OR email = $2';
+
+    const requestExistsResult = await db.query(requestExistsQuery, [username, email]);
+    if (requestExistsResult.rows.length > 0) {
+      logger.warn(`[${requestId}] Registration attempt failed: A registration request with this username or email already exists - IP: ${ip}`);
+      return res.status(409).json({ message: 'A registration request with this username or email already exists.' });
+    }
+
+    // 3. Insert the request into the database
+    const insertQuery = `
+        INSERT INTO login.registration_requests (first_name, last_name, username, email, request_date, status)
+        VALUES ($1, $2, $3, $4, NOW(), 'pending')
+        RETURNING id`;
+    const insertResult = await db.query(insertQuery, [firstName, lastName, username, email]);
+    const newRequestId = insertResult.rows[0].id; // Get the new request's ID
+
+    // 4. Send notification email to manager(s)
+    //await sendNotificationEmail(username, email, reason, newRequestId);
+
+    logger.info(`[${requestId}] Registration request submitted successfully- Username: ${username}, Email: ${email} - IP: ${ip}`);
+    res.status(201).json({ message: 'Registration request submitted successfully.  You will be notified when your request is reviewed.' });
+
+  } catch (error) {
+    logger.error(`[${requestId}] Error during registration request: ${error.message} - IP: ${ip}`, error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 module.exports = { login, loginPost, logout, refreshToken, 
   forgotPassword, forgotPasswordPost,
   resetPassword, resetPasswordPost,
-  changePassword, changePasswordPost
+  changePassword, changePasswordPost,
+  register, registerPost
  };

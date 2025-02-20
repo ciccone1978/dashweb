@@ -73,3 +73,74 @@ exports.createUser = async(userData) => {
         throw new Error('Failed to create user');   
     }
 }
+
+
+// ---Requests approval---
+exports.getRequests = async () => {
+    try {
+        const query = `SELECT id, first_name, last_name, username, email, status 
+            FROM login.registration_requests
+            where status = 'pending'`;
+
+        const { rows } = await db.query(query);
+        return rows;
+    } catch (error) {
+        logger.error('Database error while fetching requests', error);
+        throw new Error('Failed to fetch requests');
+    } 
+};
+
+exports.rejectRequest = async (id, approved_by) => {
+    try {
+        const query = `UPDATE login.registration_requests
+            SET status='rejected'::text, approved_by=$1, approval_date=now()
+            WHERE id = $2;`;
+
+        await db.query(query, [approved_by, id]);
+
+    } catch (error) {
+        logger.error('Database error while rejecting request', error);
+        throw new Error('Failed to reject request');
+    } 
+};
+
+exports.approveRequest = async (id, approved_by) => {
+    try {
+        await db.query('BEGIN');
+
+        const requestQuery =
+            `SELECT * FROM login.registration_requests WHERE id = $1 AND status = 'pending'`;
+    
+        const requestResult = await db.query(requestQuery, [id]);
+        if (requestResult.rows.length === 0) {
+            await db.query('ROLLBACK'); // Rollback transaction
+            return { message: 'Request not found or already processed' };
+        }
+        const request = requestResult.rows[0];
+
+        const updateQuery = `UPDATE login.registration_requests
+            SET status='approved'::text, approved_by=$1, approval_date=now()
+            WHERE id = $2;`;
+
+        await db.query(updateQuery, [approved_by, id]);
+
+        const newPassword = helpers.generateSecureRandomPassword(12);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+         const createUserQuery = `INSERT INTO login.users
+            (username, email, password_hash, first_name, last_name)
+            VALUES($1, $2, $3, $4, $5) RETURNING id;`
+
+        const values = [request.username, request.email, hashedPassword, request.first_name, request.last_name];
+        const {rows} = await db.query(createUserQuery, values);
+
+        await db.query('COMMIT');
+
+        return { id: rows[0].id };    
+
+    } catch (error) {
+        await db.query('ROLLBACK');
+        logger.error('Database error while rejecting request', error);
+        throw new Error('Failed to reject request');
+    } 
+};

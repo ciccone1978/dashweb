@@ -83,6 +83,24 @@ CREATE TABLE login.user_recent_reports (
     PRIMARY KEY (user_id, report_id)
 );
 
+--Registration requests
+CREATE TABLE login.registration_requests (
+	id serial4 NOT NULL,
+	first_name text NOT NULL,
+	last_name text NOT NULL,
+	username text NOT NULL,
+	email text NOT NULL,
+	request_date timestamptz NOT NULL,
+	status text DEFAULT 'pending'::text NOT NULL,
+	approved_by int4 NULL,
+	approval_date timestamptz NULL,
+	CONSTRAINT registration_requests_email_key UNIQUE (email),
+	CONSTRAINT registration_requests_pkey PRIMARY KEY (id),
+	CONSTRAINT registration_requests_username_key UNIQUE (username),
+	CONSTRAINT request_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))),
+	CONSTRAINT registration_requests_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES login.users(id)
+);
+
 
 -- Indexes for performance
 

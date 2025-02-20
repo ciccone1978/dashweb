@@ -60,4 +60,38 @@ exports.createUser = async (req, res) => {
     }
 };
 
+
+// ---Requests approval---
+exports.getRequests = async (req, res) => {
+    try {
+        const requests = await adminService.getRequests();
+        res.status(200).json(requests);
+    } catch (error) {
+        logger.error('Error fetching requests:', error);
+        res.status(500).json({ error: 'Error fetching requests' });
+    }
+};
+
+exports.rejectRequest = async (req, res) => {
+    try {
+        const approved_by = req.user.id;
+        await adminService.rejectRequest(req.params.id, approved_by);
+        res.status(200).json({ message: `User request rejected successfully` });
+    } catch (error) {
+        console.error('Error rejecting request:', error);
+        res.status(500).json({ message: 'Error rejecting request' });
+    }    
+};
+
+exports.approveRequest = async (req, res) => {
+    try {
+        const approved_by = req.user.id;
+        const newUser = await adminService.approveRequest(req.params.id, approved_by);
+        res.status(200).json({ message: `User request approved successfully`, newUser });
+    } catch (error) {
+        console.error('Error approving request:', error);
+        res.status(500).json({ message: 'Error approving request' });
+    }    
+};
+
 //module.exports = { getUsers, toggleUserStatus, getUserInfo, updateUser };

@@ -30,15 +30,17 @@ $(document).ready(function() {
                                 data: "id",
                                 render: function (data, type, row) {
                                     return `
-                                        <button class="btn btn-warning btn-sm edit-user" data-id="${data}">Edit</button>
-                                        <button class="btn btn-danger btn-sm toggle-status" data-id="${data}" data-status="${row.status}">
-                                            ${row.status === "active" ? "Disable" : "Enable"}
+                                        <button class="btn btn-primary btn-xs edit-user" data-id="${data}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn ${row.status === "active" ? "btn-danger" : "btn-success"} btn-xs toggle-status" data-id="${data}" data-status="${row.status}">
+                                            ${row.status === "active" ? "<i class='fas fa-ban'></i> Disable" : "<i class='fas fa-power-off'></i> Enable"}
                                         </button>
                                     `;
                                 }
                             }
                         ],
-                        searching: false,
+                        searching: true,
                         autoWidth: false
                     });
                 }

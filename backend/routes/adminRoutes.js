@@ -24,4 +24,15 @@ router.put('/users/:id', adminController.updateUser);
 //Enable or disable a user (soft disable)
 router.patch('/users/:id/status', adminController.toggleUserStatus);
 
+// ---Requests approval---
+
+router.get("/requests/manage", (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/src/views/admin/requests.html'));
+});
+
+router.get('/requests', adminController.getRequests);
+router.post('/requests/:id/approve', adminController.approveRequest);
+router.post('/requests/:id/reject', adminController.rejectRequest);
+
+
 module.exports = router;

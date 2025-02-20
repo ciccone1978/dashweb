@@ -20,4 +20,7 @@ router.post('/reset-password', authController.resetPasswordPost);
 router.get('/change-password', authenticateToken, authController.changePassword);
 router.post('/change-password', authenticateToken, authController.changePasswordPost);
 
+router.get('/register', authController.register);
+router.post('/register', authController.registerPost);
+
 module.exports = router;
