@@ -1,8 +1,8 @@
 import { api } from './utils/api.js';
 
 document.addEventListener("DOMContentLoaded", function () {
-    const username = document.getElementById("username");
-    const logoutButton = document.getElementById('logout-button');
+    //const username = document.getElementById("username");
+    //const logoutButton = document.getElementById('logout-button');
     const sidebarContainer = document.getElementById("sidebar-container");
 
     function generateSidebarMenu(menuData) {
@@ -82,10 +82,10 @@ document.addEventListener("DOMContentLoaded", function () {
         nav.appendChild(ul);
 
         return nav.outerHTML;
-      }
+    }
     
 
-    // --- Function to check login status and fetch user data & menu ---
+    /* // --- Function to check login status and fetch user data & menu ---
     async function loadUserData() {
         try {
             // Fetch user data
@@ -111,10 +111,10 @@ document.addEventListener("DOMContentLoaded", function () {
                  window.location.href = '/auth/login'; //redirect if error 401
             }
         }
-    }
+    } */
 
     // --- Handle logout button click ---
-    logoutButton.addEventListener('click', async () => {
+/*     logoutButton.addEventListener('click', async () => {
         try {
             const response = await api.get('/auth/logout'); // Use the Axios instance
 
@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (error) {
             console.error('Error during logout:', error);
         }
-    });
+    }); */
 
-    loadUserData();
+    //loadUserData();
 });
