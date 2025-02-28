@@ -13,6 +13,7 @@ exports.getSlicers = async (req, res) => {
 };
 
 exports.getReportData = async (req, res) => {
+  const requestId = req.headers['x-request-id'] || 'No Request ID';
   try {
     const { startDate, endDate, product } = req.body;
     const reportData = await reportService.getReportData(startDate, endDate, product);

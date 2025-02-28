@@ -4,6 +4,14 @@ import { loadSlicer } from "../utils/helpers.js";
 $(document).ready(function () {
     let reportTable;
     let salesChart = echarts.init(document.getElementById("salesChart"));
+
+    $('#startDate').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
+
+    $('#endDate').datetimepicker({
+        format: 'YYYY-MM-DD'
+    });
             
     // Fetch and render report data
     function fetchReportData() {
@@ -49,7 +57,8 @@ $(document).ready(function () {
                     { data: 'total_price' }
                 ],
                 searching: false,
-                autoWidth: false
+                autoWidth: false,
+                paging: false
             });
         }
 
