@@ -1,37 +1,10 @@
 import { api } from '../utils/api.js';
+import { loadSlicer } from "../utils/helpers.js";
 
 $(document).ready(function () {
     let reportTable;
     let salesChart = echarts.init(document.getElementById("salesChart"));
-
-    // Load slicers
-    function loadSlicers() {
-        api.get('/api/reports/sales/slicers')
-            .then(response => {
-                $("#productFilter").append(
-                    response.data.products.map(p => `<option value="${p.product_name}">${p.product_name}</option>`)
-                );    
-            })
-            .catch(error => {
-                console.error('Error fetching users:', error);
-            });
-
-            let startDateInput = document.getElementById("startDate");
-            let endDateInput = document.getElementById("endDate");
             
-            let today = new Date();
-            let sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(today.getDate() - 30);
-            let formatDate = (date) => date.toISOString().split("T")[0];
-            startDateInput.value = formatDate(sevenDaysAgo);
-            endDateInput.value = formatDate(today);
-        /* $.get("/api/reports/sales/slicers", function (data) {
-            $("#productFilter").append(
-                data.products.map(p => `<option value="${p.product_name}">${p.product_name}</option>`)
-            );
-        }); */
-    }
-
     // Fetch and render report data
     function fetchReportData() {
         let startDate = $("#startDate").val();
@@ -40,27 +13,12 @@ $(document).ready(function () {
 
         api.post("/api/reports/sales/data", { startDate, endDate, product })
             .then(response => {
-                if (response.data.success) {
-                    let data = response.data.data;
-                    updateChart(data);
-                    updateTable(data);
-                } else {
-                    console.error("Failed to fetch report data");
-                }
+                let data = response.data;
+                updateChart(data);
+                updateTable(data);
             })
             .catch(error => console.error("Error fetching report data:", error));
     }
-    
-    /* function fetchReportData() {
-        let startDate = $("#startDate").val();
-        let endDate = $("#endDate").val();
-        let product = $("#productFilter").val();
-
-        $.get("/api/reports/sales/data", { startDate, endDate, product }, function (data) {
-            updateChart(data);
-            updateTable(data);
-        });
-    } */
 
     // Update ECharts visualization
     function updateChart(data) {
@@ -95,19 +53,13 @@ $(document).ready(function () {
             });
         }
 
-        /* let table = $("#salesTable").DataTable();
-        table.clear();
-        data.forEach(d => {
-            table.row.add([d.date, d.product_name, d.quantity, d.total_price]);
-        });
-        table.draw(); */
     }
 
     // Event listener for filter changes
     $("#applyFilters").click(fetchReportData);
 
     // Initialize
-    loadSlicers();
-    fetchReportData();
+    loadSlicer("products", "productFilter");
+    //fetchReportData();
     //$("#salesTable").DataTable();
 });

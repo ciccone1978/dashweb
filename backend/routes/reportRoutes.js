@@ -7,7 +7,7 @@ router.get("/sales", (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/src/views/reports/salesReport.html'));
 });
 
-router.get("/sales/slicers", reportController.getSlicers);
+router.get("/sales/slicers/:slicer", reportController.getSlicers);
 router.post("/sales/data", reportController.getReportData);
 
 module.exports = router;
